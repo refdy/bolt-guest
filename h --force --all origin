@@ -1,0 +1,804 @@
+[33mcommit 15d8d2ec048a741e1d55bf6c8289d6514228be7b[m
+Author: Stijnus <72551117+Stijnus@users.noreply.github.com>
+Date:   Sat Feb 7 15:26:46 2026 +0100
+
+    feat: add Cerebras and Fireworks AI LLM providers (#2113)
+    
+    * fix: improve local model provider robustness and UX
+    
+    - Extract shared Docker URL rewriting and env conversion into BaseProvider
+      to eliminate 4x duplicated code across Ollama and LMStudio
+    - Add error handling and 5s timeouts to all model-listing fetches so one
+      unreachable provider doesn't block the entire model list
+    - Fix Ollama using createOllama() instead of mutating provider internals
+    - Fix LLMManager singleton ignoring env updates on subsequent requests
+    - Narrow cache key to only include provider-relevant env vars instead of
+      the entire server environment
+    - Fix 'as any' casts in LMStudio and OpenAILike by using shared
+      convertEnvToRecord helper
+    - Replace console.log/error with structured logger in OpenAILike
+    - Fix typo: filteredStaticModesl -> filteredStaticModels in manager
+    - Add connection status indicator (green/red dot) for local providers
+      in the ModelSelector dropdown
+    - Show helpful "is X running?" message when local provider has no models
+    
+    Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+    
+    * feat: add Cerebras LLM provider
+    
+    - Add Cerebras provider with 8 models (Llama, GPT OSS, Qwen, ZAI GLM)
+    - Integrate @ai-sdk/cerebras@0.2.16 for compatibility
+    - Add CEREBRAS_API_KEY to environment configuration
+    - Register provider in LLMManager registry
+    
+    Models included:
+    - llama3.1-8b, llama-3.3-70b
+    - gpt-oss-120b (reasoning)
+    - qwen-3-32b, qwen-3-235b variants
+    - zai-glm-4.6, zai-glm-4.7 (reasoning)
+    
+    Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+    
+    * feat: add Fireworks AI LLM provider
+    
+    - Add Fireworks provider with 6 popular models
+    - Integrate @ai-sdk/fireworks@0.2.16 for compatibility
+    - Add FIREWORKS_API_KEY to environment configuration
+    - Register provider in LLMManager registry
+    
+    Models included:
+    - Llama 3.1 variants (405B, 70B, 8B Instruct)
+    - DeepSeek R1 (reasoning model)
+    - Qwen 2.5 72B Instruct
+    - FireFunction V2
+    
+    Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+    
+    * feat: add coding-specific models to existing providers
+    
+    Enhanced providers with state-of-the-art coding models:
+    
+    **DeepSeek Provider:**
+    + DeepSeek V3.2 (integrates thinking + tool-use)
+    + DeepSeek V3.2-Speciale (high-compute variant, beats GPT-5)
+    
+    **Fireworks Provider:**
+    + Qwen3-Coder 480B (262K context, best for coding)
+    + Qwen3-Coder 30B (fast coding specialist)
+    
+    **Cerebras Provider:**
+    + Qwen3-Coder 480B (2000 tokens/sec!)
+    - Removed deprecated models (qwen-3-32b, llama-3.3-70b)
+    
+    Total new models: 4
+    Total coding models across all providers: 12+
+    
+    Performance highlights:
+    - Qwen3-Coder: State-of-the-art coding performance
+    - DeepSeek V3.2: Integrates thinking directly into tool-use
+    - ZAI GLM 4.6: 73.8% SWE-bench score
+    - Ultra-fast inference: 2000 tok/s on Cerebras
+    
+    Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+    
+    * feat: add dynamic model discovery to providers
+    
+    Implemented getDynamicModels() for automatic model discovery:
+    
+    **DeepSeek Provider:**
+    - Fetches models from https://api.deepseek.com/models
+    - Automatically discovers new models as DeepSeek adds them
+    - Filters out static models to avoid duplicates
+    
+    **Cerebras Provider:**
+    - Fetches models from https://api.cerebras.ai/v1/models
+    - Auto-discovers new Cerebras models
+    - Keeps UI up-to-date with latest offerings
+    
+    **Fireworks Provider:**
+    - Fetches from https://api.fireworks.ai/v1/accounts/fireworks/models
+    - Includes context_length from API response
+    - Discovers new Qwen-Coder and other models automatically
+    
+    **Moonshot Provider:**
+    - Fetches from https://api.moonshot.ai/v1/models
+    - OpenAI-compatible endpoint
+    - Auto-discovers new Kimi models
+    
+    Benefits:
+    - ✅ No manual updates needed when providers add new models
+    - ✅ Users always have access to latest models
+    - ✅ Graceful fallback to static models if API fails
+    - ✅ 5-second timeout prevents hanging
+    - ✅ Caching system built into BaseProvider
+    
+    Technical details:
+    - Uses BaseProvider's built-in caching system
+    - Cache invalidates when API keys change
+    - Failed API calls fallback to static models
+    - All endpoints have 5-second timeout protection
+    
+    Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+    
+    * feat: add Z.AI provider with GLM models and JWT authentication
+    
+    Merged changes from PR #2069 to add Z.AI provider:
+    - Added GLM-4.6 (200K), GLM-4.5 (128K), and GLM-4.5 Flash models
+    - Implemented secure JWT token generation with HMAC-SHA256 signing
+    - Added dynamic model discovery from Z.AI API
+    - Included proper error handling and token validation
+    - GLM-4.6 achieves 73.8% on SWE-bench coding benchmarks
+    
+    Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+    
+    ---------
+    
+    Co-authored-by: Claude Opus 4.6 <noreply@anthropic.com>
+
+[33mcommit 79ca0d756013930c60424158695bb12431d83306[m
+Author: Stijnus <72551117+Stijnus@users.noreply.github.com>
+Date:   Mon Sep 8 19:29:12 2025 +0200
+
+    feat: comprehensive service integration refactor with enhanced tabs architecture (#1978)
+    
+    * feat: add service tabs refactor with GitHub, GitLab, Supabase, Vercel, and Netlify integration
+    
+    This commit introduces a comprehensive refactor of the connections system,
+    replacing the single connections tab with dedicated service integration tabs:
+    
+    ✨ New Service Tabs:
+    - GitHub Tab: Complete integration with repository management, stats, and API
+    - GitLab Tab: GitLab project integration and management
+    - Supabase Tab: Database project management with comprehensive analytics
+    - Vercel Tab: Project deployment management and monitoring
+    - Netlify Tab: Site deployment and build management
+    
+    🔧 Supporting Infrastructure:
+    - Enhanced store management for each service with auto-connect via env vars
+    - API routes for secure server-side token handling and data fetching
+    - Updated TypeScript types with missing properties and interfaces
+    - Comprehensive hooks for service connections and state management
+    - Security utilities for API endpoint validation
+    
+    🎨 UI/UX Improvements:
+    - Individual service tabs with tailored functionality
+    - Motion animations and improved loading states
+    - Connection testing and health monitoring
+    - Advanced analytics dashboards for each service
+    - Consistent design patterns across all service tabs
+    
+    🛠️ Technical Changes:
+    - Removed legacy connection tab in favor of individual service tabs
+    - Updated tab configuration and routing system
+    - Added comprehensive error handling and loading states
+    - Enhanced type safety with extended interfaces
+    - Implemented environment variable auto-connection features
+    
+    Note: Some TypeScript errors remain and will need to be resolved in follow-up commits.
+    The dev server runs successfully and the service tabs are functional.
+    
+    🤖 Generated with [Claude Code](https://claude.ai/code)
+    
+    Co-Authored-By: Claude <noreply@anthropic.com>
+    
+    * feat: comprehensive service integration refactor with enhanced tabs architecture
+    
+    Major architectural improvements to service integrations:
+    
+    **Service Integration Refactor:**
+    - Complete restructure of service connection tabs (GitHub, GitLab, Vercel, Netlify, Supabase)
+    - Migrated from centralized ConnectionsTab to dedicated service-specific tabs
+    - Added shared service integration components for consistent UX
+    - Implemented auto-connection feature using environment variables
+    
+    **New Components & Architecture:**
+    - ServiceIntegrationLayout for consistent service tab structure
+    - ConnectionStatus, ServiceCard components for reusable UI patterns
+    - BranchSelector component for repository branch management
+    - Enhanced authentication dialogs with improved error handling
+    
+    **API & Backend Enhancements:**
+    - New API endpoints: github-branches, gitlab-branches, gitlab-projects, vercel-user
+    - Enhanced GitLab API service with comprehensive project management
+    - Improved connection testing hooks (useConnectionTest)
+    - Better error handling and rate limiting across all services
+    
+    **Configuration & Environment:**
+    - Updated .env.example with comprehensive service integration guides
+    - Added auto-connection support for all major services
+    - Improved development and production environment configurations
+    - Enhanced tab management with proper service icons
+    
+    **Code Quality & TypeScript:**
+    - Fixed all TypeScript errors across service integration components
+    - Enhanced type definitions for Vercel, Supabase, and other service integrations
+    - Improved type safety with proper optional chaining and type assertions
+    - Better separation of concerns between UI and business logic
+    
+    **Removed Legacy Code:**
+    - Removed redundant connection components and consolidated into service tabs
+    - Cleaned up unused imports and deprecated connection patterns
+    - Streamlined authentication flows across all services
+    
+    This refactor provides a more maintainable, scalable architecture for service integrations
+    while significantly improving the user experience for managing external connections.
+    
+    🤖 Generated with [Claude Code](https://claude.ai/code)
+    
+    Co-Authored-By: Claude <noreply@anthropic.com>
+    
+    * refactor: clean up dead code and consolidate utilities
+    
+    - Remove legacy .eslintrc.json (replaced by flat config)
+    - Remove duplicate app/utils/types.ts (unused type definitions)
+    - Remove app/utils/cn.ts and consolidate with classNames utility
+    - Clean up unused ServiceErrorHandler class implementation
+    - Enhance classNames utility to support boolean values
+    - Update GlowingEffect.tsx to use consolidated classNames utility
+    
+    Removes ~150+ lines of unused code while maintaining all functionality.
+    
+    🤖 Generated with [Claude Code](https://claude.ai/code)
+    
+    Co-Authored-By: Claude <noreply@anthropic.com>
+    
+    * Simplify terminal health checks and improve project setup
+    
+    Removed aggressive health checking and reconnection logic from TerminalManager to prevent issues with terminal responsiveness. Updated TerminalTabs to remove onReconnect handlers. Enhanced projectCommands utility to generate non-interactive setup commands and detect shadcn projects, improving automation and reliability of project setup.
+    
+    * fix: resolve GitLab deployment issues and enhance GitHub deployment reliability
+    
+    GitLab Deployment Fixes:
+    - Fix COEP header issue for avatar images by adding crossOrigin and referrerPolicy attributes
+    - Implement repository name sanitization to handle special characters and ensure GitLab compliance
+    - Enhance error handling with detailed validation error parsing and user-friendly messages
+    - Add explicit path field and description to project creation requests
+    - Improve URL encoding and project path resolution for proper API calls
+    - Add graceful file commit handling with timeout and error recovery
+    
+    GitHub Deployment Enhancements:
+    - Add comprehensive repository name validation and sanitization
+    - Implement real-time feedback for invalid characters in repository name input
+    - Enhance error handling with specific error types and retry suggestions
+    - Improve user experience with better error messages and validation feedback
+    - Add repository name length limits and character restrictions
+    - Show sanitized name preview to users before submission
+    
+    General Improvements:
+    - Add GitLabAuthDialog component for improved authentication flow
+    - Enhance logging and debugging capabilities for deployment operations
+    - Improve accessibility with proper dialog titles and descriptions
+    - Add better user notifications for name sanitization and validation issues
+    
+    🤖 Generated with [Claude Code](https://claude.ai/code)
+    
+    Co-Authored-By: Claude <noreply@anthropic.com>
+    
+    ---------
+    
+    Co-authored-by: Claude <noreply@anthropic.com>
+
+[33mcommit 0158471f0d38db0c6540beac8c92af67c5a1b44d[m
+Author: Stijnus <72551117+Stijnus@users.noreply.github.com>
+Date:   Fri Sep 5 14:01:33 2025 +0200
+
+    feat: gitLab Integration Implementation / github refactor / overal improvements (#1963)
+    
+    * Add GitLab integration components
+    
+    Introduced PushToGitLabDialog and GitlabConnection components to handle GitLab project connections and push functionality. Includes user authentication, project handling, and UI for seamless integration with GitLab.
+    
+    * Add components for GitLab connection and push dialog
+    
+    Introduce `GitlabConnection` and `PushToGitLabDialog` components to handle GitLab integration. These components allow users to connect their GitLab account, manage recent projects, and push code to a GitLab repository with detailed configurations and feedback.
+    
+    * Fix GitLab personal access tokens link to use correct URL
+    
+    * Update GitHub push call to use new pushToRepository method
+    
+    * Enhance GitLab integration with performance improvements
+    
+    - Add comprehensive caching system for repositories and user data
+    - Implement pagination and search/filter functionality with debouncing
+    - Add skeleton loaders and improved loading states
+    - Implement retry logic for API calls with exponential backoff
+    - Add background refresh capabilities
+    - Improve error handling and user feedback
+    - Optimize API calls to reduce loading times
+    
+    * feat: implement GitLab integration with connection management and repository handling
+    
+    - Add GitLab connection UI components
+    - Implement GitLab API service for repository operations
+    - Add GitLab connection store for state management
+    - Update existing connection components (Vercel, Netlify)
+    - Add repository listing and statistics display
+    - Refactor GitLab components into organized folder structure
+    
+    * fix: resolve GitLab deployment issues and improve user experience
+    
+    - Fix DialogTitle accessibility warnings for screen readers
+    - Remove CORS-problematic attributes from avatar images to prevent loading errors
+    - Enhance GitLab API error handling with detailed error messages
+    - Fix project creation settings to prevent initial commit conflicts
+    - Add automatic GitLab connection state initialization on app startup
+    - Improve deployment dialog UI with better error handling and user feedback
+    - Add GitLab deployment source type to action runner system
+    - Clean up deprecated push dialog files and consolidate deployment components
+    
+    🤖 Generated with [Claude Code](https://claude.ai/code)
+    
+    Co-Authored-By: Claude <noreply@anthropic.com>
+    
+    * feat: implement GitHub clone repository dialog functionality
+    
+    This commit fixes the missing GitHub repository selection dialog in the "Clone a repo" feature
+    by implementing the same elegant interface pattern used by GitLab.
+    
+    Key Changes:
+    - Added onCloneRepository prop support to GitHubConnection component
+    - Updated RepositoryCard to generate proper GitHub clone URLs (https://github.com/{full_name}.git)
+    - Implemented full GitHub repository selection dialog in GitCloneButton.tsx
+    - Added proper dialog close handling after successful clone operations
+    - Maintained existing GitHub connection settings page functionality
+    
+    Technical Details:
+    - Follows same component patterns as GitLab implementation
+    - Uses proper TypeScript interfaces for clone URL handling
+    - Includes professional dialog styling with loading states
+    - Supports repository search, pagination, and authentication flow
+    
+    The GitHub clone experience now matches GitLab's functionality, providing users with
+    a unified and intuitive repository selection interface across both providers.
+    
+    🤖 Generated with [Claude Code](https://claude.ai/code)
+    
+    Co-Authored-By: Claude <noreply@anthropic.com>
+    
+    * Clean up unused connection components
+    
+    - Remove ConnectionForm.tsx (unused GitHub form component)
+    - Remove CreateBranchDialog.tsx (unused branch creation dialog)
+    - Remove RepositoryDialogContext.tsx (unused context provider)
+    - Remove empty components/ directory
+    
+    These files were not referenced anywhere in the codebase and were leftover from development.
+    
+    * Remove environment variables info section from ConnectionsTab
+    
+    - Remove collapsible environment variables section
+    - Clean up unused state and imports
+    - Simplify the connections tab UI
+    
+    * Reorganize connections folder structure
+    
+    - Create netlify/ folder and move NetlifyConnection.tsx
+    - Create vercel/ folder and move VercelConnection.tsx
+    - Add index.ts files for both netlify and vercel folders
+    - Update imports in ConnectionsTab.tsx to use new folder structure
+    - All connection components now follow consistent folder organization
+    
+    ---------
+    
+    Co-authored-by: Hayat Bourgi <hayat.bourgi@montyholding.com>
+    Co-authored-by: Hayat55 <53140162+Hayat55@users.noreply.github.com>
+    Co-authored-by: Claude <noreply@anthropic.com>
+
+[33mcommit fc90b6d9d561295467101033a1eb700bdf19d42e[m
+Author: Stijnus <72551117+Stijnus@users.noreply.github.com>
+Date:   Sun Aug 31 18:54:14 2025 +0200
+
+    feat: add Moonshot AI (Kimi) provider and update xAI Grok models (#1953)
+    
+    - Add comprehensive Moonshot AI provider with 11 models including:
+      * Legacy moonshot-v1 series (8k, 32k, 128k context)
+      * Latest Kimi K2 models (K2 Preview, Turbo, Thinking)
+      * Vision-enabled models for multimodal capabilities
+      * Auto-selecting model variants
+    
+    - Update xAI provider with latest Grok models:
+      * Add Grok 4 (256K context) and Grok 4 (07-09) variant
+      * Add Grok 3 Mini Beta and Mini Fast Beta variants
+      * Update context limits to match actual model capabilities
+      * Remove outdated grok-beta and grok-2-1212 models
+    
+    - Add MOONSHOT_API_KEY to environment configuration
+    - Register Moonshot provider in service status monitoring
+    - Full OpenAI-compatible API integration via api.moonshot.ai
+    - Fix TypeScript errors in GitHub provider
+    
+    🤖 Generated with [Claude Code](https://claude.ai/code)
+    
+    Co-authored-by: Claude <noreply@anthropic.com>
+
+[33mcommit 9a7706a8c9ef28dfd19f7d7180f257b9bdbce8f4[m
+Author: Stijnus <72551117+Stijnus@users.noreply.github.com>
+Date:   Sun Aug 31 02:14:43 2025 +0200
+
+    feat: comprehensive GitHub workflow improvements with security & quality enhancements (#1940)
+    
+    * feat: add comprehensive workflow testing framework
+    
+    - Add test-workflows.yaml for safe workflow validation
+    - Add interactive testing script (test-workflows.sh)
+    - Add comprehensive testing documentation (WORKFLOW_TESTING.md)
+    - Add preview deployment smoke tests
+    - Add Playwright configuration for preview testing
+    - Add configuration files for quality checks
+    
+    * fix: standardize pnpm version to 9.14.4 across all configs
+    
+    - Update package.json packageManager to match workflow configurations
+    - Resolves version conflict detected by workflow testing
+    - Ensures consistent pnpm version across development and CI/CD
+    
+    * fix: resolve TypeScript issues in test files
+    
+    - Add ts-ignore comments for Playwright imports (dev dependency)
+    - Add proper type annotations to avoid implicit any errors
+    - These files are only used in testing environments where Playwright is installed
+    
+    * feat: add CODEOWNERS file for automated review assignments
+    
+    - Automatically request reviews from repository maintainers
+    - Define ownership for security-sensitive and core architecture files
+    - Enhance code review process with automated assignees
+    
+    * fix: update CODEOWNERS for upstream repository maintainers
+    
+    - Replace personal ownership with stackblitz-labs/bolt-maintainers team
+    - Ensure appropriate review assignments for upstream collaboration
+    - Maintain security review requirements for sensitive files
+    
+    * fix: resolve workflow failures in upstream CI
+    
+    - Exclude preview tests from main test suite (require Playwright)
+    - Add test configuration to vite.config.ts to prevent import errors
+    - Make quality workflow tools more resilient with better error handling
+    - Replace Cloudflare deployment with mock for upstream repo compatibility
+    - Replace Playwright smoke tests with basic HTTP checks
+    - Ensure all workflows can run without additional dependencies
+    
+    These changes maintain workflow functionality while being compatible
+    with the upstream repository's existing setup and dependencies.
+    
+    * fix: make workflows production-ready and non-blocking
+    
+    Critical fixes to prevent workflows from blocking future PRs:
+    
+    - Preview deployment: Gracefully handle missing Cloudflare secrets
+    - Quality analysis: Make dependency checks resilient with fallbacks
+    - PR size check: Add continue-on-error and larger size categories
+    - Quality gates: Distinguish required vs optional workflows
+    - All workflows: Ensure they pass when dependencies/secrets missing
+    
+    These changes ensure workflows enhance the development process
+    without becoming blockers for legitimate PRs.
+    
+    * fix: ensure all workflows are robust and never block PRs
+    
+    Final robustness improvements:
+    
+    - Preview deployment: Add continue-on-error for GitHub API calls
+    - Preview deployment: Add summary step to ensure workflow always passes
+    - Cleanup workflows: Handle missing permissions gracefully
+    - PR Size Check: Replace external action with robust git-based implementation
+    - All GitHub API calls: Add continue-on-error to prevent permission failures
+    
+    These changes guarantee that workflows provide value without blocking
+    legitimate PRs, even when secrets/permissions are missing.
+    
+    * fix: ensure Docker image names are lowercase for ghcr.io compatibility
+    
+    - Add step to convert github.repository to lowercase using tr command
+    - Update all image references to use lowercase repository name
+    - Resolves "repository name must be lowercase" error in Docker registry
+    
+    🤖 Generated with [Claude Code](https://claude.ai/code)
+    
+    Co-Authored-By: Claude <noreply@anthropic.com>
+    
+    * feat: Add comprehensive bug reporting system
+    
+    - Add BugReportTab component with full form validation
+    - Implement real-time environment detection (browser, OS, screen resolution)
+    - Add API route for bug report submission to GitHub
+    - Include form validation with character limits and required fields
+    - Add preview functionality before submission
+    - Support environment info inclusion in reports
+    - Clean up and remove screenshot functionality for simplicity
+    - Fix validation logic to properly clear errors when fixed
+    
+    ---------
+    
+    Co-authored-by: Claude <noreply@anthropic.com>
+
+[33mcommit 7b7fe45f20368cc87d15788008b8bfc75a3e4f39[m
+Author: Stijnus <72551117+Stijnus@users.noreply.github.com>
+Date:   Sat Mar 29 21:12:47 2025 +0100
+
+    feat: new improvement for the GitHub API Authentication Fix  (#1537)
+    
+    * Add environment variables section to ConnectionsTab and fallback token to git-info
+    
+    * Add remaining code from original branch
+    
+    * Import Repo Fix
+    
+    * refactor the UI
+    
+    * add a rate limit counter
+    
+    * Update GithubConnection.tsx
+    
+    * Update NetlifyConnection.tsx
+    
+    * fix: ui style
+    
+    * Sync with upstream and preserve GitHub connection and DataTab fixes
+    
+    * fix disconnect buttons
+    
+    * revert commits
+    
+    * Update api.git-proxy.$.ts
+    
+    * Update api.git-proxy.$.ts
+
+[33mcommit 2831a1f7f8ed0e96c5868ebb943c6b38b9de171d[m
+Author: kunjabijukchhe <43906826+kunjabijukchhe@users.noreply.github.com>
+Date:   Mon Jan 6 18:04:16 2025 +0545
+
+    feat: implement Claude 3, Claude3.5, Nova Pro, Nova Lite and Mistral model integration with AWS Bedrock (#974)
+    
+    * feat: Integrate AWS Bedrock with Claude 3.5 Sonnet, Claude 3 Sonnet, and Claude 3.5 Haiku
+    
+    * update Dockerfile for AWS Bedrock configuration
+    
+    * feat: add new Bedrock model 'Mistral' and update Haiku to version 3
+    
+    * feat: add new bedrock model Nova Lite and Nova Pro
+    
+    * Update README documentation to reflect the latest changes
+    
+    * Add the icon for aws bedrock
+    
+    * add support for serialized AWS Bedrock configuration in api key
+
+[33mcommit 5a85c5ada736cd8a586a9ddda5318408cc0bbb14[m
+Author: Arsalaan Ahmed <147995884+Ahmed-Rahil@users.noreply.github.com>
+Date:   Mon Dec 30 23:26:33 2024 +0530
+
+    feat: added hyperbolic llm models (#943)
+    
+    * Added Hyperbolic Models
+    
+    * Fix: Fixed problem in connecting with hyperbolic models
+    
+    * added dynamic models for hyperbolic
+    
+    * removed logs
+
+[33mcommit 50320274a6be2e82ec4ea44df37e3994f1b57bcc[m
+Author: Alex Parker <128879861+Soumyaranjan-17@users.noreply.github.com>
+Date:   Tue Dec 24 13:32:04 2024 +0530
+
+    docs: updated env.example of OLLAMA & LMSTUDIO base url (#877)
+    
+    * correct OLLAMA_API_BASE_URL
+    
+    * correct OLLAMA_API_BASE_URL
+    
+    * correct OLLAMA_API_BASE_URL
+
+[33mcommit 8e4bb1d15df13bff8088e9ed6209e3d9f4d30381[m
+Author: Meet Patel <113581962+meetpateltech@users.noreply.github.com>
+Date:   Sat Dec 14 11:59:10 2024 +0530
+
+    feat: added perplexity model
+
+[33mcommit ef61ce63bb4ddac8d52b0551101413f646c34ecd[m
+Author: Dustin Loring <dustinwloring1988@gmail.com>
+Date:   Mon Dec 2 05:16:43 2024 -0500
+
+    Update .env.example
+    
+    Fixed typo in example env
+
+[33mcommit 0d4bc4119a1885755ab0a2a354d3c2384958993e[m
+Author: Martin Ouimet <mouimet@infinisoft.world>
+Date:   Sat Nov 23 00:20:35 2024 -0500
+
+    feat: add Together AI integration and provider implementation guide
+    
+    - Create detailed provider implementation guide with:
+      - Architecture overview and implementation steps
+      - Configuration patterns and best practices
+      - Testing checklist and Docker integration guide
+      - Example using Together AI implementation
+    - Add Together AI as new provider with:
+      - Environment variables and Docker configuration
+      - Support for Qwen, Llama, and Mixtral models
+      - API key and base URL management
+      - OpenAI-compatible API integration
+
+[33mcommit c0322e4cdd74eb42cac05b3d04e8d73e2707eb6f[m
+Merge: 5f64930 1bcc192
+Author: Chris Mahoney <chris.p.mahoney@gmail.com>
+Date:   Thu Nov 21 20:39:08 2024 -0600
+
+    Merge branch 'main' into main
+
+[33mcommit daa7711ce64c942290ca43a95381da28f0f6b1fd[m
+Author: Raiyan Hasan <raiyanhasan2006@gmail.com>
+Date:   Wed Nov 20 15:08:42 2024 +0000
+
+    Cohere support added
+
+[33mcommit 3ef8467229975c4bd826d9669c4b3b6d7687780b[m
+Merge: 4a064e7 4ee331d
+Author: Eduard Ruzga <wonderwhy.er@gmail.com>
+Date:   Tue Nov 19 13:33:20 2024 +0200
+
+    Merge pull request #314 from ahsan3219/main
+    
+    Huggingface Models Integrated
+
+[33mcommit 5f64930d4cff492096b218b276cd9c97f154267a[m
+Author: Aaron Bolton <aaron@bukn.net>
+Date:   Tue Nov 19 07:46:51 2024 +0000
+
+    DEFAULT_NUM_CTX additions
+    
+    adding further changes for DEFAULT_NUM_CTX, including docs
+
+[33mcommit bed1808439d65814bca24b90458e32f1913c3e8f[m
+Author: Aaron Bolton <aaron@bukn.net>
+Date:   Mon Nov 18 20:48:35 2024 +0000
+
+    Created DEFAULT_NUM_CTX VAR with a deafult of 32768
+
+[33mcommit 6d1b9d281160b13210f88d388bf307034058c5b2[m
+Author: Chris Mahoney <chris.p.mahoney@gmail.com>
+Date:   Mon Nov 18 11:18:04 2024 -0600
+
+    Should not provide hard-coded OLLAMA_API_BASE_URL value in .env.example
+
+[33mcommit 6916afcb789310e2b7c0ad25d258fc0a5f961fb2[m
+Author: ahsan3219 <ahsanrazasyedahsan@gmail.com>
+Date:   Mon Nov 18 04:49:02 2024 +0500
+
+    Huggingface Models Integrated
+
+[33mcommit dfb862f455819a40c28841fcbe0ff1621ba2e530[m
+Merge: 95773d9 ade5295
+Author: armfuls <pallets.armfuls_0t@icloud.com>
+Date:   Wed Nov 13 22:27:56 2024 +0100
+
+    Merge branch 'coleam00:main' into main
+
+[33mcommit 95773d94aebe8035660dff25b176d8c878cfde1a[m
+Merge: 325cf52 9204dd1
+Author: armfuls <pallets.armfuls_0t@icloud.com>
+Date:   Sat Nov 9 16:03:55 2024 +0100
+
+    Merge branch 'coleam00:main' into main
+
+[33mcommit 9e2d7475658760b7cde9c153595e87f5686a8c6e[m
+Merge: ce5c969 55b119d
+Author: Karrot <86092166+karrot0@users.noreply.github.com>
+Date:   Fri Nov 8 17:10:40 2024 -0500
+
+    Merge branch 'main' into main
+
+[33mcommit 29b131b7e87cf07e5a45e61399915817a1bdf741[m
+Author: Anon <bgteam@live.com>
+Date:   Thu Nov 7 01:14:27 2024 +0100
+
+    Added the XAI_API_KEY variable to the .env.example
+
+[33mcommit ceccfa60e23278a202be3312af81527659f8b9d6[m
+Merge: eb7c668 441a2e9
+Author: Karrot <86092166+karrot0@users.noreply.github.com>
+Date:   Sun Nov 3 16:21:16 2024 -0500
+
+    Merge branch 'coleam00:main' into main
+
+[33mcommit 9f7f6642093e4777bd2674b9f94445db737761ba[m
+Author: Cole Medin <47287758+coleam00@users.noreply.github.com>
+Date:   Fri Nov 1 07:09:19 2024 -0500
+
+    Fixing up Docker Compose to work with hot reloads in development and environment variables
+
+[33mcommit eb7c66853cb7f708055c89b13b58c39f5992079e[m
+Merge: ac60ea3 50a4413
+Author: Karrot <86092166+karrot0@users.noreply.github.com>
+Date:   Wed Oct 30 14:52:23 2024 -0400
+
+    Merge branch 'coleam00:main' into main
+
+[33mcommit 50a441395a254fc5603f3df907d15c999bb98b27[m
+Author: Cole Medin <47287758+coleam00@users.noreply.github.com>
+Date:   Mon Oct 28 13:13:44 2024 -0500
+
+    Added DEEPSEEK_API_KEY to .env.example
+
+[33mcommit 8d12830102c95bf103c4648c56470952aada44ee[m
+Author: Karrot0 <karrotgaming1@gmail.com>
+Date:   Sun Oct 27 23:16:07 2024 -0400
+
+    LM Studio Integration
+
+[33mcommit 325cf52bede46420617941519b1044bdcd318aa6[m
+Author: bleuproton <GregoryGilds@gmail.com>
+Date:   Fri Oct 25 00:20:50 2024 +0200
+
+    main
+
+[33mcommit 07b86b331c13fd1aa128493ca5913129304c42b5[m
+Merge: 0685de0 979eb4a
+Author: Cole Medin <cole@dynamous.ai>
+Date:   Thu Oct 24 08:19:59 2024 -0500
+
+    Merge branch 'main' into main
+
+[33mcommit 903990ab31ffe66a6750311596c02aca9e6d637a[m
+Author: Gaoyao Massimo Hu <ghzero97@gmail.com>
+Date:   Wed Oct 23 16:43:27 2024 +0100
+
+    chore: Update environment variable names for OpenAI Like integration
+
+[33mcommit a9ed604e3e33ec09db988b174fd9a62a6fcc3963[m
+Author: Gaoyao Massimo Hu <ghzero97@gmail.com>
+Date:   Wed Oct 23 16:36:12 2024 +0100
+
+    chore: Add environment variables for OpenAI API Like integration
+
+[33mcommit 87c8dda1d6409657e3ae173ffeae487760410afe[m
+Author: ArulGandhi <arulgandhi2@outlook.com>
+Date:   Tue Oct 22 09:22:36 2024 +0530
+
+    add mistral models
+
+[33mcommit 8bfe70051b67dfb7e439d610b691a3249e5ea9d3[m
+Author: jonathan DS <jonathands@gmail.com>
+Date:   Tue Oct 15 18:47:35 2024 -0300
+
+    added Google Generative AI (gemini) integration
+
+[33mcommit f482c24f20e7365e4972b9c5797ae7f50e2c0605[m
+Author: Cole Medin <47287758+coleam00@users.noreply.github.com>
+Date:   Sat Oct 19 13:21:24 2024 -0500
+
+    Fixing up codebase after merging pull requests
+
+[33mcommit 48ab49f765330b661dbcb8cf9c3c7a5df0bb8007[m
+Merge: 18d2333 889dc4a
+Author: Cole Medin <cole@dynamous.ai>
+Date:   Sat Oct 19 12:44:01 2024 -0500
+
+    Merge branch 'main' into main
+
+[33mcommit 18d233373d5af884a7a37ef0ec99784cb1ad6bb4[m
+Author: yunat <yunatamos@gmail.com>
+Date:   Fri Oct 18 14:34:08 2024 +0300
+
+    let the ollama models be auto generated from ollama api
+
+[33mcommit adb5b5dff118b6971d8536fff5901580c9db10c2[m
+Author: jonathan DS <jonathands@gmail.com>
+Date:   Tue Oct 15 18:47:35 2024 -0300
+
+    added Google Generative AI (gemini) integration
+
+[33mcommit 101cab1853263d2829fafb03037f07f73a3b2be1[m
+Author: Cole Medin <47287758+coleam00@users.noreply.github.com>
+Date:   Mon Oct 14 19:40:21 2024 -0500
+
+    Added the OpenRouter provider and a few models from OpenRouter (easily extendable to include more!)
+
+[33mcommit bcdf9c1fb6d296d227a396fd1ef2d39b6251dc01[m
+Author: Cole Medin <47287758+coleam00@users.noreply.github.com>
+Date:   Sun Oct 13 13:53:43 2024 -0500
+
+    Added the ability to use practically any LLM you can dream of within Bolt.new

@@ -1,0 +1,9 @@
+version: "3.9"
+
+services:
+  bolt:
+    image: bolt-guest
+    ports:
+      - "8082:5173"
+    environment:
+      OLLAMA_API_BASE_URL: http://192.168.2.18:11434
