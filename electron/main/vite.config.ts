@@ -26,7 +26,8 @@ export default defineConfig({
         'node:util',
         'node:stream',
         'node:events',
-        'electron-store',
+'node:child_process',
+'electron-store',
         '@remix-run/node',
 
         // "mime", // NOTE: don't enable. not working if it's external.

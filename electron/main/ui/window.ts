@@ -38,6 +38,18 @@ export function createWindow(rendererURL: string) {
     console.log('Window finished loading');
   });
 
+  win.webContents.on('console-message', (_, level, message, line, sourceId) => {
+    console.log('[Renderer]', level, message, line, sourceId);
+  });
+
+  win.webContents.on('render-process-gone', (_, details) => {
+    console.error('[Renderer Gone]', details);
+  });
+
+  win.webContents.on('unresponsive', () => {
+    console.error('[Renderer] unresponsive');
+  });
+
   // Open devtools in development
   if (isDev) {
     win.webContents.openDevTools();
